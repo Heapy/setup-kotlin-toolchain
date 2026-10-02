@@ -119,8 +119,8 @@ Kotlin Toolchain is alpha: see the
 ## Related actions
 
 - [update-ktc](https://github.com/Heapy/update-ktc)
-- [check-ktc](https://github.com/Heapy/check-ktc)
-- [publish-ktc](https://github.com/Heapy/publish-ktc)
+- [ktc-check](https://github.com/Heapy/ktc-check)
+- [ktc-publish](https://github.com/Heapy/ktc-publish)
 
 The Windows launcher prioritizes native system utilities and filters incompatible
 Git/Strawberry Perl shims only in the toolchain child process. The runner-wide

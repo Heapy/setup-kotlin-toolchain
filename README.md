@@ -125,3 +125,8 @@ Kotlin Toolchain is alpha: see the
 The Windows launcher prioritizes native system utilities and filters incompatible
 Git/Strawberry Perl shims only in the toolchain child process. The runner-wide
 PATH receives only the action installation directory.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party
+components retain their original licenses.

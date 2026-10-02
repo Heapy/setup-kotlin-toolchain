@@ -1,0 +1,7 @@
+setup-kotlin-toolchain
+Copyright 2026 Heapy
+
+Licensed under the Apache License, Version 2.0.
+
+Kotlin Toolchain wrappers and JVM fixtures contain code from JetBrains s.r.o.
+and contributors, also licensed under Apache-2.0. See test/fixtures/NOTICE.

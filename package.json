@@ -1,6 +1,6 @@
 {
   "name": "setup-kotlin-toolchain",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "GitHub Action to install and cache JetBrains Kotlin Toolchain",
@@ -11,5 +11,5 @@
   "engines": {
     "node": ">=22"
   },
-  "license": "MIT"
+  "license": "Apache-2.0"
 }

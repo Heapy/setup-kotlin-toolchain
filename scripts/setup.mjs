@@ -154,7 +154,7 @@ const wrapper = path.join(path.dirname(fileURLToPath(import.meta.url)), 'kotlin.
 const args = [wrapper, ...process.argv.slice(2)];
 if (args.some(arg => /["%\\r\\n]/.test(arg))) throw new Error('Unsupported Windows argument');
 const env = { ...process.env };
-const oldPath = env.Path || env.PATH || '';
+const oldPath = (env.Path || env.PATH || '').split(';').filter(dir => !/strawberry|[\\\\/]git[\\\\/](usr|mingw64)[\\\\/]bin/i.test(dir)).join(';');
 for (const key of Object.keys(env)) if (key.toLowerCase() === 'path') delete env[key];
 env.PATH = path.join(env.SystemRoot || 'C:\\\\Windows', 'System32') + ';' + oldPath;
 const command = '"' + args.map(arg => '"' + arg + '"').join(' ') + '"';

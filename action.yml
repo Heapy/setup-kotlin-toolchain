@@ -1,0 +1,77 @@
+name: Heapy Setup Kotlin Toolchain
+description: Install a pinned JetBrains Kotlin Toolchain and cache dependencies and JDKs
+branding:
+  icon: terminal
+  color: purple
+inputs:
+  version:
+    description: 'Exact version >= 0.12.0, or auto to read the project wrapper (fallback: 0.13.0)'
+    default: auto
+  working-directory:
+    description: Directory containing project wrappers, relative to the workspace
+    default: .
+  cache:
+    description: Cache toolchain distributions, dependencies and provisioned JDKs
+    default: 'true'
+  cache-key-suffix:
+    description: Extra cache key component for manually invalidating caches
+    default: ''
+  cache-read-only:
+    description: 'auto saves only on push, workflow_dispatch, and schedule; true restores only; false allows saving'
+    default: auto
+  wrapper-sha256:
+    description: Optional trusted wrapper SHA-256; otherwise use the upstream checksum
+    default: ''
+  verify:
+    description: Run kotlin --version to provision and verify the CLI
+    default: 'true'
+outputs:
+  version:
+    description: Selected Kotlin Toolchain version
+    value: ${{ steps.prepare.outputs.version }}
+  cache-hit:
+    description: Whether the exact cache key was restored (empty when caching is disabled)
+    value: ${{ steps.cache.outputs.cache-hit || steps.restore.outputs.cache-hit }}
+  bin-path:
+    description: Directory added to PATH
+    value: ${{ steps.prepare.outputs.bin }}
+runs:
+  using: composite
+  steps:
+    - name: Resolve version and install verified wrapper
+      id: prepare
+      shell: bash
+      env:
+        ACTION_DIRECTORY: ${{ github.action_path }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_DIRECTORY: ${{ inputs.working-directory }}
+        INPUT_CACHE: ${{ inputs.cache }}
+        INPUT_SHA256: ${{ inputs.wrapper-sha256 }}
+        INPUT_VERIFY: ${{ inputs.verify }}
+        INPUT_CACHE_READ_ONLY: ${{ inputs.cache-read-only }}
+        INPUT_CACHE_SUFFIX: ${{ inputs.cache-key-suffix }}
+        INPUT_CONFIG_HASH: ${{ hashFiles('**/module.yaml', '**/project.yaml', '**/*.module-template.yaml', '**/libs.versions.toml') }}
+      run: node "$ACTION_DIRECTORY/scripts/setup.mjs" prepare
+    - name: Restore toolchain caches
+      id: cache
+      if: steps.prepare.outputs.cache-enabled == 'true' && steps.prepare.outputs.cache-read-only == 'false'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.prepare.outputs.cache-path }}
+        key: ${{ steps.prepare.outputs.cache-key }}
+        restore-keys: ${{ steps.prepare.outputs.cache-prefix }}
+    - name: Restore toolchain caches without saving
+      id: restore
+      if: steps.prepare.outputs.cache-enabled == 'true' && steps.prepare.outputs.cache-read-only == 'true'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+      with:
+        path: ${{ steps.prepare.outputs.cache-path }}
+        key: ${{ steps.prepare.outputs.cache-key }}
+        restore-keys: ${{ steps.prepare.outputs.cache-prefix }}
+    - name: Provision and verify Kotlin Toolchain
+      if: inputs.verify == 'true'
+      shell: bash
+      env:
+        ACTION_DIRECTORY: ${{ github.action_path }}
+        TOOLCHAIN_WRAPPER: ${{ steps.prepare.outputs.wrapper }}
+      run: node "$ACTION_DIRECTORY/scripts/setup.mjs" bootstrap

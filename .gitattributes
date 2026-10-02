@@ -1,0 +1,6 @@
+* text=auto
+/kotlin text eol=lf
+*.bat text eol=crlf
+*.kt text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf

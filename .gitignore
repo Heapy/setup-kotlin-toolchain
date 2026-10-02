@@ -1,0 +1,9 @@
+build/
+.kotlin/
+.amper/
+.idea/
+*.iml
+.DS_Store
+.env
+.env.*
+!.env.example

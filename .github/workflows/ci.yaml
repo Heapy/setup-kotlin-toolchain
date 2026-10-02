@@ -1,0 +1,80 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Unit tests
+        run: npm test
+      - name: Install from project wrapper
+        id: setup
+        uses: ./
+        with:
+          working-directory: test/fixtures/jvm
+      - name: Build, test, and package fixture
+        working-directory: test/fixtures/jvm
+        shell: bash
+        run: |
+          kotlin build
+          kotlin test
+          kotlin package
+      - name: Install explicit version without cache
+        uses: ./
+        with:
+          version: 0.13.0
+          cache: 'false'
+      - name: Check version output
+        shell: bash
+        env:
+          SELECTED_VERSION: ${{ steps.setup.outputs.version }}
+        run: test "$SELECTED_VERSION" = '0.13.0'
+  cache-seed:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./
+        with:
+          cache-key-suffix: smoke-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Write cache round-trip marker
+        shell: bash
+        run: echo round-trip > "$KOTLIN_SHARED_CACHE_DIR/round-trip-marker"
+  cache-restore:
+    needs: cache-seed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./
+        id: setup
+        with:
+          cache-key-suffix: smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          cache-read-only: 'true'
+      - name: Verify remote cache restored in a fresh job
+        shell: bash
+        env:
+          CACHE_HIT: ${{ steps.setup.outputs.cache-hit }}
+        run: |
+          test "$CACHE_HIT" = 'true'
+          test "$(cat "$KOTLIN_SHARED_CACHE_DIR/round-trip-marker")" = 'round-trip'

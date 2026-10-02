@@ -115,14 +115,10 @@ export async function prepare(env = process.env) {
   const wrapper = path.join(bin, wrapperName);
   await writeFile(wrapper, bytes);
   if (process.platform !== 'win32') await chmod(wrapper, 0o755);
-  // Git Bash resolves the POSIX launcher; PowerShell/cmd resolve kotlin.bat.
+  // Git Bash needs a shell launcher that uses the same native Windows wrapper.
   if (process.platform === 'win32') {
-    const posixUrl = `${repository}/${version}/kotlin-cli-${version}-wrapper`;
-    const [posix, digest] = await Promise.all([download(posixUrl), download(`${posixUrl}.sha256`)]);
-    verifyChecksum(posix, digest.toString('utf8').trim());
-    const pin = parseWrapper(posix.toString('utf8'));
-    if (pin.version !== version || pin.checksum !== upstream.checksum) throw new Error('Windows launchers disagree');
-    await writeFile(path.join(bin, 'kotlin'), posix);
+    await writeFile(path.join(bin, 'kotlin'), '#!/bin/sh\nexec node "$(dirname "$0")/launch.mjs" "$@"\n');
+    await writeFile(path.join(bin, 'launch.mjs'), windowsLauncher);
   }
   await appendFile(env.GITHUB_PATH, `${bin}\n`);
   for (const [key, value] of Object.entries({
@@ -130,6 +126,7 @@ export async function prepare(env = process.env) {
     KOTLIN_SHARED_CACHE_DIR: shared,
     KOTLIN_CLI_NO_WELCOME_BANNER: '1',
     KOTLIN_CLI_WRAPPER_ALWAYS_USE_INTRINSIC_VERSION: '1',
+    KOTLIN_TOOLCHAIN_BIN: bin,
   })) await record(env.GITHUB_ENV, key, value);
   for (const [key, value] of Object.entries({ version, bin, wrapper, 'cache-path': cacheRoot,
     'cache-enabled': String(cacheEnabled), 'cache-read-only': String(readOnly),
@@ -144,11 +141,27 @@ export function bootstrap(env = process.env) {
   const wrapper = env.TOOLCHAIN_WRAPPER;
   if (!wrapper || /[\r\n"%]/.test(wrapper)) throw new Error('Invalid wrapper path');
   const result = process.platform === 'win32'
-    ? spawnSync('cmd.exe', ['/d', '/s', '/c', `""${wrapper}" --version"`], { stdio: 'inherit', env, windowsVerbatimArguments: true })
+    ? spawnSync(process.execPath, [path.join(path.dirname(wrapper), 'launch.mjs'), '--version'], { stdio: 'inherit', env })
     : spawnSync(wrapper, ['--version'], { stdio: 'inherit', env });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`Toolchain bootstrap failed (exit ${result.status})`);
 }
+
+export const windowsLauncher = `import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const wrapper = path.join(path.dirname(fileURLToPath(import.meta.url)), 'kotlin.bat');
+const args = [wrapper, ...process.argv.slice(2)];
+if (args.some(arg => /["%\\r\\n]/.test(arg))) throw new Error('Unsupported Windows argument');
+const env = { ...process.env };
+const oldPath = env.Path || env.PATH || '';
+for (const key of Object.keys(env)) if (key.toLowerCase() === 'path') delete env[key];
+env.PATH = path.join(env.SystemRoot || 'C:\\\\Windows', 'System32') + ';' + oldPath;
+const command = '"' + args.map(arg => '"' + arg + '"').join(' ') + '"';
+const result = spawnSync('cmd.exe', ['/d', '/v:off', '/s', '/c', command], { env, stdio: 'inherit', windowsVerbatimArguments: true });
+if (result.error) throw result.error;
+process.exitCode = result.status ?? 1;
+`;
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {

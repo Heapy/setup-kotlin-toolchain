@@ -1,4 +1,4 @@
-# setup-kotlin-toolchain
+# setup-ktc
 
 GitHub Action for **JetBrains Kotlin Toolchain** (formerly Amper). Installs a
 versioned, checksum-verified CLI wrapper on Linux, macOS, and Windows; optionally
@@ -13,7 +13,7 @@ permissions:
   contents: read
 steps:
   - uses: actions/checkout@v7
-  - uses: Heapy/setup-kotlin-toolchain@v1
+  - uses: Heapy/setup-ktc@v1
     with:
       version: auto
   - run: kotlin build
@@ -118,9 +118,9 @@ Kotlin Toolchain is alpha: see the
 
 ## Related actions
 
-- [update-kotlin-toolchain](https://github.com/Heapy/update-kotlin-toolchain)
-- [kotlin-toolchain-check](https://github.com/Heapy/kotlin-toolchain-check)
-- [kotlin-toolchain-publish](https://github.com/Heapy/kotlin-toolchain-publish)
+- [update-ktc](https://github.com/Heapy/update-ktc)
+- [check-ktc](https://github.com/Heapy/check-ktc)
+- [publish-ktc](https://github.com/Heapy/publish-ktc)
 
 The Windows launcher prioritizes native system utilities and filters incompatible
 Git/Strawberry Perl shims only in the toolchain child process. The runner-wide

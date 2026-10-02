@@ -1,5 +1,5 @@
 {
-  "name": "setup-kotlin-toolchain",
+  "name": "setup-ktc",
   "version": "1.0.1",
   "private": true,
   "type": "module",

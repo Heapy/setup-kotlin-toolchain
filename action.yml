@@ -1,4 +1,4 @@
-name: Heapy Setup Kotlin Toolchain
+name: Setup Kotlin Toolchain
 description: Install a pinned JetBrains Kotlin Toolchain and cache dependencies and JDKs
 branding:
   icon: terminal

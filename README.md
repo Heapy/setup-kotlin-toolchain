@@ -53,7 +53,7 @@ No remote installer is piped into a shell. Installation uses a private directory
 under `RUNNER_TEMP`, prepended to `PATH`, without changing shell profiles. Inputs
 are passed through environment variables, validated, and never evaluated as code.
 Requires Node.js 22+ and Bash on the runner (provided by current GitHub-hosted
-runners; Windows uses Git Bash for action steps and the native `.bat` wrapper).
+runners; Windows uses Git Bash for action steps and a small Node launcher for the native `.bat` wrapper).
 
 `KOTLIN_CLI_BOOTSTRAP_CACHE_DIR` and `KOTLIN_SHARED_CACHE_DIR` are set to dedicated
 runner-temporary directories. The selected version is enforced through
@@ -115,3 +115,13 @@ together when adopting a new Kotlin Toolchain release.
 
 Kotlin Toolchain is alpha: see the
 [upstream release notes](https://github.com/JetBrains/kotlin-toolchain/releases).
+
+## Related actions
+
+- [update-kotlin-toolchain](https://github.com/Heapy/update-kotlin-toolchain)
+- [kotlin-toolchain-check](https://github.com/Heapy/kotlin-toolchain-check)
+- [kotlin-toolchain-publish](https://github.com/Heapy/kotlin-toolchain-publish)
+
+The Windows launcher prioritizes native system utilities and filters incompatible
+Git/Strawberry Perl shims only in the toolchain child process. The runner-wide
+PATH receives only the action installation directory.
